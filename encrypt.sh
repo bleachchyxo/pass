@@ -1,42 +1,43 @@
 #!/bin/bash
 #encrypt.sh
 
-read -sp 'Insert key:' keypass
+read -sp 'Insert key:' key # The password for decrypting
 echo " "
-read -sp 'Insert password:' password
+read -sp 'Insert password:' password # The actual password being ecrypted
 echo " "
-echo Key: $keypass
+echo Key: $key
 echo Password: $password
 
-# Compares lenght between keypass and password
+# Making the file where the password will be stored
+echo "pass " > foofile
 
-if [ ${#keypass} -lt ${#password} ]; then
+# Compares lenght between keypass and password
+if [ ${#key} -lt ${#password} ]; then
         echo "password is bigger"
 fi
 
 for ((i=0; i<${#password}; i++)); do
 
-        keypassBinarytoDecimal="$((2#"$(echo "${keypass:i:1}" | xxd -b | awk '{print $2}')"))"
-        passwordBinarytoDecimal="$((2#"$(echo "${password:i:1}" | xxd -b | awk '{print $2}')"))"
+        keyConvertion="$((2#"$(echo "${key:i:1}" | xxd -b | awk '{print $2}')"))" # ASCII > BINARY > DECIMAL
+        passwordConvertion="$((2#"$(echo "${password:i:1}" | xxd -b | awk '{print $2}')"))" # ASCII > BINARY > DECIMAL
+        addition="$(($keyConvertion+$passwordConvertion))" # Adds the two decimal values
 
-        if [ $(($keypassBinarytoDecimal+$passwordBinarytoDecimal)) -lt 255 ]; then
+        if [ $addition -lt 255 ]; then
 
-                wordsAdd="$(($keypassBinarytoDecimal+$passwordBinarytoDecimal))"
-                decimalToBinary="$(echo "obase=2;$wordsAdd" | bc)"
+                binaryConvertion="$(echo "obase=2;$addition" | bc)" # Sum result > BINARY
 
-                if [ ${#decimalToBinary} -lt 8 ]; then
-                        missingBits="$((8-${#decimalToBinary}))"
-                        # Filling the missing bits
+                if [ ${#binaryConvertion} -eq 8 ]; then
 
-                        character="$(echo "$(printf "%0*d" "$missingBits" 0)$decimalToBinary")"
-                        string="$(echo "$character" | perl -lape '$_=pack"(B8)*",@F')"
+                        character="$(echo "$binaryConvertion")"
+                        string="$(echo "character" | perl -lape '$_=pack"(B8)*",@F')" # BINARY > ASCII
                         sed "s/\$/${string}/" -i foofile
-                 else
-                        character="$(echo "$decimalToBinary")"
-                        string="$(echo "character" | perl -lape '$_=pack"(B8)*",@F')"
+                        
+                else
+                        #Filling the missing bits
+                        missingBits="$((8-${#binaryConvertion}))"
+                        character="$(echo "$(printf "%0*d" "$missingBits" 0)$binaryConvertion")"
+                        string="$(echo "$character" | perl -lape '$_=pack"(B8)*",@F')" # BINARY > ASCII
                         sed "s/\$/${string}/" -i foofile
-                        echo "$string"
-
 
                 fi
 
