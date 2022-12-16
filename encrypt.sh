@@ -8,14 +8,6 @@ echo " "
 echo Key: $key
 echo Password: $password
 
-# file that stores the password
-echo "pass " > foofile
-
-# compares lenght between keypass and password
-if [ ${#key} -lt ${#password} ]; then
-        echo "password is bigger"
-fi
-
 for ((i=0; i<${#password}; i++)); do
 
         keyConvertion="$((2#"$(echo "${key:i:1}" | xxd -b | awk '{print $2}')"))" # ascii > binary > decimal
@@ -28,11 +20,12 @@ for ((i=0; i<${#password}; i++)); do
                 # filling the missing characters in the octet
                 missingBits="$((8-${#binaryConvertion}))"
                 character="$(echo "$(printf "%0*d" "$missingBits" 0)$binaryConvertion")"
-                string="$(echo "$character" | perl -lape '$_=pack"(B8)*",@F')" # binary > ascii
-                sed "s/\$/${string}/" -i foofile
+                echo "$character" >> foofile
+                
         else
+        
                 character="$(echo "$binaryConvertion")"
-                string="$(echo "character" | perl -lape '$_=pack"(B8)*",@F')" # binary > ascii
-                sed "s/\$/${string}/" -i foofile
+                echo "$character" >> foofile
+                
         fi
 done
